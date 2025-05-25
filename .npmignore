@@ -1,0 +1,7 @@
+src/
+dist/helpers.d.ts
+dist/RequestClient.d.ts
+
+rollup.config.js
+tsconfig.json
+package-lock.json
