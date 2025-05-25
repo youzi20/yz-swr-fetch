@@ -3,7 +3,7 @@ import { SWRConfig, SWRConfiguration } from "swr";
 
 import { RequestClient, RequestClientConfig } from "yz-fetch";
 
-export default function Provider(
+export function Provider(
   props: RequestClientConfig & {
     origin: string;
     confige?: SWRConfiguration;
@@ -27,3 +27,5 @@ export default function Provider(
     />
   );
 }
+
+export default Provider;

@@ -12,7 +12,7 @@ export enum FetcherType {
   AUTH = "AUTH", // 需要Token
 }
 
-export default function useFetcher<T>(type: FetcherType, options?: OptionsType) {
+export function useFetcher<T>(type: FetcherType, options?: OptionsType) {
   const fetcher = useSWRConfig().fetcher as RequestClient["request"];
 
   const isLogin = useAuthStore(state => state.isLogin);
@@ -45,3 +45,5 @@ export default function useFetcher<T>(type: FetcherType, options?: OptionsType) 
     [authorization, isLogin, type, options, fetcher]
   );
 }
+
+export default useFetcher;

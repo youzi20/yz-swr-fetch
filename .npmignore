@@ -1,7 +1,7 @@
 src/
-dist/helpers.d.ts
-dist/RequestClient.d.ts
 
-rollup.config.js
+rollup.config.cjs
 tsconfig.json
 package-lock.json
+pnpm-lock.yaml
+pnpm-workspace.yaml

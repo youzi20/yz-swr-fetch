@@ -13,7 +13,7 @@ export interface RequestConfiguration {
   swrConfiguration?: SWRConfiguration;
 }
 
-export default function useRequest<T>(url: string, config: RequestConfiguration = {}) {
+export function useRequest<T>(url: string, config: RequestConfiguration = {}) {
   const { type = FetcherType.AUTH, options, swrConfiguration } = config;
 
   const fetcher = useFetcher<T>(type, options);
@@ -53,3 +53,5 @@ export default function useRequest<T>(url: string, config: RequestConfiguration 
 
   return response;
 }
+
+export default useRequest;
