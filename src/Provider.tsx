@@ -3,14 +3,14 @@ import { SWRConfig, SWRConfiguration } from "swr";
 
 import { RequestClient, RequestClientConfig } from "yz-fetch";
 
-export function Provider(
-  props: RequestClientConfig & {
+export function Provider(props: {
+  value: RequestClientConfig & {
     origin: string;
-    confige?: SWRConfiguration;
     children: React.ReactNode;
-  }
-) {
-  const { origin, confige, baseUrl, debug, ...other } = props;
+    config?: SWRConfiguration;
+  };
+}) {
+  const { origin, config, baseUrl, debug, ...other } = props.value;
 
   const client = useMemo(() => new RequestClient({ baseUrl, debug }), [origin]);
 
@@ -21,7 +21,7 @@ export function Provider(
         revalidateOnFocus: false,
         revalidateOnReconnect: false,
         keepPreviousData: true,
-        ...confige,
+        ...config,
       }}
       {...other}
     />
