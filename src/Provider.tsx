@@ -4,27 +4,28 @@ import { SWRConfig, SWRConfiguration } from "swr";
 import { RequestClient, RequestClientConfig } from "yz-fetch";
 
 export function Provider(props: {
-  value: RequestClientConfig & {
-    origin: string;
-    children: React.ReactNode;
-    config?: SWRConfiguration;
-  };
+  value: RequestClientConfig & { config?: SWRConfiguration };
+  children: React.ReactNode;
 }) {
-  const { origin, config, baseUrl, debug, ...other } = props.value;
+  const {
+    value: { baseUrl, debug, config },
+    children,
+  } = props;
 
-  const client = useMemo(() => new RequestClient({ baseUrl, debug }), [origin]);
+  const client = useMemo(() => new RequestClient({ baseUrl, debug }), [baseUrl, debug]);
 
   return (
     <SWRConfig
       value={{
-        fetcher: client.request,
+        fetcher: client.request.bind(client),
         revalidateOnFocus: false,
         revalidateOnReconnect: false,
         keepPreviousData: true,
         ...config,
       }}
-      {...other}
-    />
+    >
+      {children}
+    </SWRConfig>
   );
 }
 
