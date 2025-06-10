@@ -4,10 +4,11 @@ import { persist } from "zustand/middleware";
 interface AuthState {
   hasHydrated: boolean;
   isLogin: boolean;
+  authType: string | null;
   authorization: string | null;
 
   setHasHydrated: () => void;
-  setAuthorization: (authorization: string | null) => void;
+  setAuthorization: (authType: string, authorization: string | null) => void;
   setLogin: (isLogin: boolean) => void;
 
   logout: () => void;
@@ -19,15 +20,15 @@ export const useAuthStore = create<AuthState>()(
       hasHydrated: false,
       isLogin: false,
       authorization: null,
-
+      authType: null,
       setHasHydrated: () => set({ hasHydrated: true }),
       setLogin: isLogin => set({ isLogin }),
-      setAuthorization: authorization => set({ authorization }),
-      logout: () => set({ isLogin: false, authorization: null }),
+      setAuthorization: (authType, authorization) => set({ authType, authorization }),
+      logout: () => set({ isLogin: false, authType: null, authorization: null }),
     }),
     {
       name: "authorization",
-      partialize: state => ({ authorization: state.authorization }),
+      partialize: state => ({ authType: state.authType, authorization: state.authorization }),
       onRehydrateStorage: () => state => {
         state?.setHasHydrated();
       },

@@ -1,11 +1,11 @@
-import { useCallback, useRef } from "react";
+import { useRef } from "react";
 import useSWR, { SWRConfiguration } from "swr";
 
 import { OptionsType } from "yz-fetch";
 
 import useAuthStore from "./useAuthStore";
-import useDeepEffect from "./useDeepEffect";
 import useFetcher, { FetcherType } from "./useFetcher";
+import useDeepEffect from "./useDeepEffect";
 
 export interface RequestConfiguration {
   type?: FetcherType;
@@ -23,33 +23,39 @@ export function useRequest<T>(url: string, config: RequestConfiguration = {}) {
   const isLogin = useAuthStore(state => state.isLogin);
   const authorization = useAuthStore(state => state.authorization);
 
+  const isFirst = useRef(true);
   const timer = useRef<NodeJS.Timeout | null>(null);
 
-  const handleUpdate = useCallback(() => {
+  const handleUpdate = () => {
     if (timer.current) clearTimeout(timer.current);
 
     timer.current = setTimeout(() => {
       response.mutate();
     }, 500);
-  }, [response]);
+  };
 
   useDeepEffect(() => {
-    if (!hasHydrated || !options) return;
+    if (!hasHydrated) return;
+
+    if (isFirst.current) {
+      isFirst.current = false;
+      return;
+    }
 
     handleUpdate();
-  }, [hasHydrated, options, handleUpdate]);
+  }, [hasHydrated, options]);
 
   useDeepEffect(() => {
     if (!hasHydrated || !authorization) return;
 
     if (type === FetcherType.AUTH_CHECK) handleUpdate();
-  }, [hasHydrated, authorization, type, handleUpdate]);
+  }, [hasHydrated, type, authorization]);
 
   useDeepEffect(() => {
     if (!hasHydrated || !isLogin) return;
 
     if ([FetcherType.PUBLIC_OR_AUTH, FetcherType.AUTH].includes(type)) handleUpdate();
-  }, [hasHydrated, isLogin, type, handleUpdate]);
+  }, [hasHydrated, type, isLogin]);
 
   return response;
 }

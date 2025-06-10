@@ -23,6 +23,10 @@ export function useFetcher<T>(type: FetcherType, options?: OptionsType) {
     async (url: string, _options?: OptionsType) => {
       var { headers, handleErrorMessage, ...other } = _options ?? options ?? {};
 
+      if (type === FetcherType.PUBLIC_OR_AUTH && authorization) {
+        headers = { authorization, ...headers };
+      }
+
       if (type === FetcherType.AUTH_CHECK) {
         if (!authorization) return null;
 
@@ -32,10 +36,6 @@ export function useFetcher<T>(type: FetcherType, options?: OptionsType) {
       if (type === FetcherType.AUTH) {
         if (!isLogin || !authorization) return null;
 
-        headers = { authorization, ...headers };
-      }
-
-      if (type === FetcherType.PUBLIC_OR_AUTH && authorization) {
         headers = { authorization, ...headers };
       }
 

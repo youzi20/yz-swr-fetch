@@ -1,16 +1,19 @@
 import { useEffect, useRef } from "react";
 
 export function useDeepEffect(effect: () => void | (() => void), deps: unknown[]) {
-  const prevDeps = useRef<unknown[]>([]);
-
-  const hasChanged = JSON.stringify(prevDeps.current) !== JSON.stringify(deps);
+  const prevDeps = useRef<unknown[] | null>(null);
 
   useEffect(() => {
-    if (hasChanged) {
+    if (prevDeps.current === null) {
+      prevDeps.current = deps;
+      return;
+    }
+
+    if (JSON.stringify(prevDeps.current) !== JSON.stringify(deps)) {
       prevDeps.current = deps;
       return effect();
     }
-  }, [hasChanged]);
+  }, deps);
 }
 
 export default useDeepEffect;
