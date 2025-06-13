@@ -23,7 +23,7 @@ export interface PaginationResponse<T> {
 
 export function usePagination<T>(
   url: string,
-  rowConfig: RequestConfiguration
+  rowConfig: RequestConfiguration & { hasHydrated?: boolean }
 ): PaginationResponse<T> {
   const [isEnd, setEnd] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
@@ -32,7 +32,7 @@ export function usePagination<T>(
   const [records, setRecords] = useState<T[] | null>(null);
   const recordRef = useRef<T[] | null>(null);
 
-  const { options, ...otherConfig } = rowConfig;
+  const { options, hasHydrated, ...otherConfig } = rowConfig;
   const { body, ...otherOption } = options ?? {};
 
   const config = {
@@ -43,12 +43,7 @@ export function usePagination<T>(
     ...otherConfig,
   };
 
-  const {
-    isLoading,
-    isValidating,
-    data,
-    mutate: reload,
-  } = useRequest<PaginationDataResponse<T>>(url, config);
+  const { isLoading, isValidating, data, mutate: reload } = useRequest<PaginationDataResponse<T>>(url, config);
 
   const handleClean = () => {
     mutate(url, undefined, { revalidate: false });
@@ -59,6 +54,8 @@ export function usePagination<T>(
 
   useEffect(() => {
     if (isLoading || isValidating || !data) return;
+
+    data.list = data.list ?? [];
 
     if (data.list.length < pageSize) setEnd(true);
 
@@ -72,7 +69,9 @@ export function usePagination<T>(
   }, [isLoading, isValidating, data]);
 
   useDeepEffect(() => {
-    handleClean();
+    if (!Object.prototype.hasOwnProperty.call(rowConfig, "hasHydrated") || hasHydrated) {
+      handleClean();
+    }
   }, [rowConfig]);
 
   useEffect(() => {
