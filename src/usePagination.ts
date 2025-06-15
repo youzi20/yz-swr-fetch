@@ -58,7 +58,7 @@ export function usePagination<T>(
   };
 
   useEffect(() => {
-    if (isLoading || isValidating || !data) return;
+    if (isLoading || isValidating || !data || !data.list) return;
 
     if (data.list.length < pageSize) setEnd(true);
 

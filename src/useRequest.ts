@@ -23,7 +23,6 @@ export function useRequest<T>(url: string, config: RequestConfiguration = {}) {
   const isLogin = useAuthStore(state => state.isLogin);
   const authorization = useAuthStore(state => state.authorization);
 
-  const isFirst = useRef(true);
   const timer = useRef<NodeJS.Timeout | null>(null);
 
   const handleUpdate = () => {
@@ -35,15 +34,8 @@ export function useRequest<T>(url: string, config: RequestConfiguration = {}) {
   };
 
   useDeepEffect(() => {
-    if (!hasHydrated) return;
-
-    if (isFirst.current) {
-      isFirst.current = false;
-      return;
-    }
-
     handleUpdate();
-  }, [hasHydrated, options]);
+  }, [options]);
 
   useDeepEffect(() => {
     if (!hasHydrated || !authorization) return;
