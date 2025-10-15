@@ -21,9 +21,13 @@ export interface PaginationResponse<T> {
   onReload: () => void;
 }
 
+interface PaginationType {
+  pageSize: number;
+}
+
 export function usePagination<T>(
   url: string,
-  rowConfig: RequestConfiguration
+  rowConfig: RequestConfiguration & { pagination?: PaginationType }
 ): PaginationResponse<T> {
   const [isEnd, setEnd] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
@@ -32,7 +36,7 @@ export function usePagination<T>(
   const [records, setRecords] = useState<T[] | null>(null);
   const recordRef = useRef<T[] | null>(null);
 
-  const { options, ...otherConfig } = rowConfig;
+  const { pagination, options, ...otherConfig } = rowConfig;
   const { body, ...otherOption } = options ?? {};
 
   const config = {
@@ -53,23 +57,28 @@ export function usePagination<T>(
   const handleClean = () => {
     mutate(url, undefined, { revalidate: false });
     setEnd(false);
-    setPageIndex(1);
+    setEndTime(null);
     setRecords(null);
+    setPageIndex(1);
   };
 
   useEffect(() => {
     if (isLoading || isValidating || !data || !data.list) return;
 
-    if (data.list.length < pageSize) setEnd(true);
-
     if (pageIndex === 1) {
       recordRef.current = [...data.list];
       setRecords(recordRef.current);
     } else {
+      if (data.list.length < pageSize) setEnd(true);
+
       recordRef.current = [...(records ?? []), ...data.list];
       setRecords(recordRef.current);
     }
   }, [isLoading, isValidating, data]);
+
+  useDeepEffect(() => {
+    if (pagination) setPageSize(pagination.pageSize);
+  }, [pagination]);
 
   useDeepEffect(() => {
     handleClean();

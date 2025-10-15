@@ -15,6 +15,7 @@ export enum FetcherType {
 export function useFetcher<T>(type: FetcherType, options?: OptionsType) {
   const fetcher = useSWRConfig().fetcher as RequestClient["request"];
 
+  const hasHydrated = useAuthStore(state => state.hasHydrated);
   const isLogin = useAuthStore(state => state.isLogin);
   const authorization = useAuthStore(state => state.authorization);
   const logout = useAuthStore(state => state.logout);
@@ -23,7 +24,11 @@ export function useFetcher<T>(type: FetcherType, options?: OptionsType) {
     async (url: string, _options?: OptionsType) => {
       var { headers, handleErrorMessage, ...other } = _options ?? options ?? {};
 
+      if (type !== FetcherType.PUBLIC && !hasHydrated) return null;
+
       if (type === FetcherType.PUBLIC_OR_AUTH && authorization) {
+        if (!isLogin) return null;
+
         headers = { authorization, ...headers };
       }
 
@@ -48,7 +53,7 @@ export function useFetcher<T>(type: FetcherType, options?: OptionsType) {
         ...other,
       });
     },
-    [authorization, isLogin, type, options, fetcher]
+    [hasHydrated, authorization, isLogin, type, options, fetcher]
   );
 }
 

@@ -38,16 +38,10 @@ export function useRequest<T>(url: string, config: RequestConfiguration = {}) {
   }, [options]);
 
   useDeepEffect(() => {
-    if (!hasHydrated || !authorization) return;
+    if (!hasHydrated) return;
 
-    if (type === FetcherType.AUTH_CHECK) handleUpdate();
-  }, [hasHydrated, type, authorization]);
-
-  useDeepEffect(() => {
-    if (!hasHydrated || !isLogin) return;
-
-    if ([FetcherType.PUBLIC_OR_AUTH, FetcherType.AUTH].includes(type)) handleUpdate();
-  }, [hasHydrated, type, isLogin]);
+    if (type !== FetcherType.PUBLIC) handleUpdate();
+  }, [hasHydrated, type, authorization, isLogin]);
 
   return response;
 }
