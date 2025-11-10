@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { mutate } from "swr";
 
-import { useDeepEffect } from "./useDeepEffect";
+import { useEffect, useEffectCleanup } from "./useSafeEffect";
 import useRequest, { RequestConfiguration } from "./useRequest";
+
+import { mergeObjects } from "./helpers";
 
 interface PaginationDataResponse<T> {
   list: T[];
@@ -21,14 +23,15 @@ export interface PaginationResponse<T> {
   onReload: () => void;
 }
 
-interface PaginationType {
+export interface PaginationType {
   pageSize: number;
 }
 
-export function usePagination<T>(
-  url: string,
-  rowConfig: RequestConfiguration & { pagination?: PaginationType }
-): PaginationResponse<T> {
+export interface PaginationConfiguration extends RequestConfiguration {
+  pagination?: PaginationType;
+}
+
+export function usePagination<T>(url: string, config: PaginationConfiguration): PaginationResponse<T> {
   const [isEnd, setEnd] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -36,29 +39,22 @@ export function usePagination<T>(
   const [records, setRecords] = useState<T[] | null>(null);
   const recordRef = useRef<T[] | null>(null);
 
-  const { pagination, options, ...otherConfig } = rowConfig;
-  const { body, ...otherOption } = options ?? {};
+  const { pagination, ...otherConfig } = config;
 
-  const config = {
-    options: {
-      body: { pageIndex, pageSize, endTime, ...body },
-      ...otherOption,
-    },
-    ...otherConfig,
-  };
+  // 合并配置
+  const requestConfig = useMemo(() => {
+    const pageBody = endTime ? { pageSize, endTime } : { pageIndex, pageSize };
 
-  const {
-    isLoading,
-    isValidating,
-    data,
-    mutate: reload,
-  } = useRequest<PaginationDataResponse<T>>(url, config);
+    return mergeObjects({ options: { body: pageBody } }, otherConfig);
+  }, [pageIndex, pageSize, endTime, otherConfig]);
+
+  const { isLoading, isValidating, data, mutate: reload } = useRequest<PaginationDataResponse<T>>(url, requestConfig);
 
   const handleClean = () => {
     mutate(url, undefined, { revalidate: false });
     setEnd(false);
-    setEndTime(null);
     setRecords(null);
+    setEndTime(null);
     setPageIndex(1);
   };
 
@@ -74,36 +70,27 @@ export function usePagination<T>(
       recordRef.current = [...(records ?? []), ...data.list];
       setRecords(recordRef.current);
     }
-  }, [isLoading, isValidating, data]);
+  }, [isLoading, isValidating, data, pageIndex, pageSize, records]);
 
-  useDeepEffect(() => {
+  useEffect(() => {
     if (pagination) setPageSize(pagination.pageSize);
   }, [pagination]);
 
-  useDeepEffect(() => {
-    handleClean();
-  }, [rowConfig]);
-
-  useEffect(() => {
-    return () => {
-      if (recordRef.current) handleClean();
-    };
-  }, []);
+  useEffectCleanup(() => handleClean(), []);
 
   return {
     isEnd,
     isLoading,
     isValidating,
     data: records,
-    nextPage: endTime => {
-      setPageIndex(index => index + 1);
-
-      if (endTime) setEndTime(endTime);
+    update: setRecords,
+    onReload: handleClean,
+    nextPage: (endTime?: number) => {
+      if (endTime) {
+        setEndTime(endTime);
+      } else {
+        setPageIndex(index => index + 1);
+      }
     },
-    onReload: () => {
-      handleClean();
-      reload();
-    },
-    update: records => setRecords(records),
   };
 }

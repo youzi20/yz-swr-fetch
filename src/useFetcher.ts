@@ -1,9 +1,14 @@
 import { useCallback } from "react";
+
 import { useSWRConfig } from "swr";
 
-import { RequestClient, OptionsType } from "yz-fetch";
+import { OptionsType, RequestClient } from "yz-fetch";
+
+import { useFetcherContext } from "./Provider";
 
 import { useAuthStore } from "./useAuthStore";
+
+import { mergeObjects } from "./helpers";
 
 export enum FetcherType {
   PUBLIC = "PUBLIC", // 不需要登录
@@ -20,9 +25,11 @@ export function useFetcher<T>(type: FetcherType, options?: OptionsType) {
   const authorization = useAuthStore(state => state.authorization);
   const logout = useAuthStore(state => state.logout);
 
+  const fetcherContext = useFetcherContext();
+
   return useCallback(
     async (url: string, _options?: OptionsType) => {
-      var { headers, handleErrorMessage, ...other } = _options ?? options ?? {};
+      var { headers, handleErrorMessage, ...other } = mergeObjects(fetcherContext.options, options, _options);
 
       if (type !== FetcherType.PUBLIC && !hasHydrated) return null;
 
@@ -53,7 +60,7 @@ export function useFetcher<T>(type: FetcherType, options?: OptionsType) {
         ...other,
       });
     },
-    [hasHydrated, authorization, isLogin, type, options, fetcher]
+    [hasHydrated, authorization, isLogin, type, options, fetcher],
   );
 }
 

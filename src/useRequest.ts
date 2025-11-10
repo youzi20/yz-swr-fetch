@@ -1,23 +1,31 @@
-import { useRef } from "react";
-import useSWR, { SWRConfiguration } from "swr";
+import { useMemo, useRef } from "react";
+
+import useSWR, { KeyedMutator, SWRConfiguration } from "swr";
 
 import { OptionsType } from "yz-fetch";
 
+import { useFetcherContext } from "./Provider";
+
 import useAuthStore from "./useAuthStore";
+import useEffect from "./useSafeEffect";
 import useFetcher, { FetcherType } from "./useFetcher";
-import useDeepEffect from "./useDeepEffect";
 
 export interface RequestConfiguration {
   type?: FetcherType;
   options?: OptionsType;
+  enabled?: boolean;
   swrConfiguration?: SWRConfiguration;
 }
 
 export function useRequest<T>(url: string, config: RequestConfiguration = {}) {
   const { type = FetcherType.AUTH, options, swrConfiguration } = config;
 
+  const fetcherContext = useFetcherContext();
+
+  const enabled = useMemo(() => (fetcherContext.enabled ?? true) && (config.enabled ?? true), [fetcherContext, config]);
+
   const fetcher = useFetcher<T>(type, options);
-  const response = useSWR<T | null>(url, fetcher, swrConfiguration);
+  const { mutate, ...response } = useSWR<T | null>(enabled ? url : null, fetcher, swrConfiguration);
 
   const hasHydrated = useAuthStore(state => state.hasHydrated);
   const isLogin = useAuthStore(state => state.isLogin);
@@ -25,25 +33,28 @@ export function useRequest<T>(url: string, config: RequestConfiguration = {}) {
 
   const timer = useRef<NodeJS.Timeout | null>(null);
 
-  const handleUpdate = () => {
+  const handleUpdate: KeyedMutator<T | null> = (...args) => {
     if (timer.current) clearTimeout(timer.current);
+    console.log("========> handleUpdate", enabled, url);
 
-    timer.current = setTimeout(() => {
-      response.mutate();
-    }, 500);
+    return new Promise(resolve => {
+      timer.current = setTimeout(async () => {
+        resolve(await mutate(...args));
+      }, 500);
+    });
   };
 
-  useDeepEffect(() => {
+  useEffect(() => {
     handleUpdate();
   }, [options]);
 
-  useDeepEffect(() => {
+  useEffect(() => {
     if (!hasHydrated) return;
 
     if (type !== FetcherType.PUBLIC) handleUpdate();
   }, [hasHydrated, type, authorization, isLogin]);
 
-  return response;
+  return { ...response, mutate: handleUpdate };
 }
 
 export default useRequest;

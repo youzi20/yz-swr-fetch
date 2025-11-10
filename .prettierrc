@@ -1,0 +1,23 @@
+{
+  "ternary": "never",
+  "printWidth": 120,
+  "arrowParens": "avoid",
+  "tabWidth": 2,
+  "plugins": [
+    "@ianvs/prettier-plugin-sort-imports"
+  ],
+  "importOrder": [
+    "^react$",
+    "",
+    "^.*swr.*$",
+    "",
+    "^yz-(.*)$",
+    "",
+    "^\\./[A-Z](.*)$",
+    "",
+    "^\\./use[A|S](.*)$",
+    "^\\./use(.*)$",
+    "",
+    "^\\./(.*)$"
+  ]
+}

@@ -1,4 +1,4 @@
-import { useRef, useCallback } from "react";
+import { useCallback, useRef } from "react";
 
 import { OptionsType } from "yz-fetch";
 
@@ -27,6 +27,6 @@ export function useDebouncedFetcher<T>(type: FetcherType, config: DebouncedFetch
         }, delay);
       });
     },
-    [delay, fetcher]
+    [delay, fetcher],
   );
 }
